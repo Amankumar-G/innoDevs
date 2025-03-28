@@ -1,0 +1,68 @@
+# Ignore environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+package-lock.json
+
+# Logs
+logs/
+*.log
+yarn-error.log
+npm-debug.log
+debug.log
+output.log
+
+# Docker-related files
+.dockerignore
+docker-compose.override.yml
+docker-compose.override.yaml
+Dockerfile.dev
+*.tar
+*.pid
+/tmp/
+
+# Build artifacts
+dist/
+build/
+.cache/
+.vite/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+
+# Python-related ignores
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Git-related
+.git/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Miscellaneous
+*.bak
+*.temp
+*.log
+*.sqlite
+*.db
