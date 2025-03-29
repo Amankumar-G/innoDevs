@@ -4,6 +4,7 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import { Button, Switch } from '@mui/material'
 import Send from "@mui/icons-material/Send" 
+import Footer from "./components/Footer/Footer"
 
 function App() {
   const [dark, setDark] = useState(false);
@@ -22,6 +23,7 @@ function App() {
        React App
        <Button  variant={dark?'outlined':'contained'} color={dark?"inherit":"primary"}  endIcon={<Send></Send>}>Click Me</Button>
     </div>
+    <Footer/>
     </div>
   )
 }

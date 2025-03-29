@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import axios from 'axios'
 import passport from 'passport';
 import cors from './config/corsConfig.js';
 import './config/mongodb.js';
@@ -12,6 +13,7 @@ import { displayStartupMessage } from './config/start.js';
 import passportConfig from './config/passport.js';
 import promMid from 'express-prometheus-middleware';
 import userRoutes from './Router/user.js';
+import uploadRouter from "./Router/upload.js"
 
 // Initialize Express and HTTP server
 displayStartupMessage();
@@ -78,8 +80,36 @@ app.use((req, res, next) => {
 });
 
 
+app.use("/", uploadRouter);
 app.use('/user', userRoutes);
+app.post("/chat", async (req, res) => {
+  const { message } = req.body;
 
+  if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+  }
+
+  try {
+      const response = await axios.post(
+          "https://api.openai.com/v1/chat/completions",
+          {
+              model: "gpt-3.5-turbo",
+              messages: [{ role: "user", content: message }],
+          },
+          {
+              headers: {
+                  "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+                  "Content-Type": "application/json",
+              },
+          }
+      );
+
+      res.json({ reply: response.data.choices[0].message.content });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Something went wrong" });
+  }
+});
 // Root route
 app.get('/', (req, res) => {
   res.send("Server is live.... ");
