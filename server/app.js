@@ -1,26 +1,39 @@
 import dotenv from 'dotenv';
 dotenv.config();
+
 import express from 'express';
+import http from 'http';
 import chalk from 'chalk';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
-import path from 'path';
-import axios from 'axios'
 import passport from 'passport';
+import promMid from 'express-prometheus-middleware';
+import { register } from 'prom-client'; // Import Prometheus client
+
 import cors from './config/corsConfig.js';
 import './config/mongodb.js';
 import { displayStartupMessage } from './config/start.js';
 import passportConfig from './config/passport.js';
-import promMid from 'express-prometheus-middleware';
 import userRoutes from './Router/user.js';
-import uploadRouter from "./Router/upload.js"
+import uploadRouter from './Router/upload.js';
+import { initializeSocket, io } from './config/socket.js';
 
-// Initialize Express and HTTP server
+// Display startup banner
 displayStartupMessage();
+
+// Initialize Express
 const app = express();
 
+// Create HTTP server
+const server = http.createServer(app);
 
+// Initialize Socket.IO before using `io`
+initializeSocket(server);
+
+// Server Port
 const PORT = process.env.PORT || 5000;
+
+// Prometheus Middleware for Metrics
 app.use(promMid({
   metricsPath: '/metrics',
   collectDefaultMetrics: true,
@@ -29,49 +42,49 @@ app.use(promMid({
   responseLengthBuckets: [512, 1024, 5120, 10240, 51200, 102400],
 }));
 
-// Middleware to parse incoming requests
-app.use(express.urlencoded({ extended: true }));
+// Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
-
-// CORS setup
 app.use(cors);
-
-// Initialize session middleware
 app.use(session({
-  secret: 'mysecretkey',  // Replace with your secret key
-  resave: false,          // Avoid resaving unchanged sessions
-  saveUninitialized: true, // Save new (but unmodified) sessions
-  cookie: { maxAge: 24 * 60 * 60 * 1000 } // Session cookie valid for 1 day
+  secret: process.env.SESSION_SECRET || 'mysecretkey', // Use environment variable for security
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    httpOnly: true
+  }
 }));
 
-
-//Passport.js Authentication setUp
+// Initialize Passport
 app.use(passport.initialize());
-passportConfig(passport); // Passport config
+passportConfig(passport);
 
-// Request logging middleware
+// Custom Logging Middleware
 app.use((req, res, next) => {
   const start = Date.now();
-  const Logtime = new Date().toLocaleString();
+  const logTime = new Date().toLocaleString();
 
   res.on('finish', () => {
     const duration = Date.now() - start;
-    const methodColor = req.method === 'GET' ? chalk.green :
-                        req.method === 'POST' ? chalk.blue :
-                        req.method === 'PUT' ? chalk.yellow :
-                        req.method === 'DELETE' ? chalk.red : chalk.white;
-    
+    const methodColor = {
+      'GET': chalk.green,
+      'POST': chalk.blue,
+      'PUT': chalk.yellow,
+      'DELETE': chalk.red
+    }[req.method] || chalk.white;
+
     const statusColor = res.statusCode >= 500 ? chalk.red :
                         res.statusCode >= 400 ? chalk.yellow :
                         res.statusCode >= 300 ? chalk.cyan :
-                        res.statusCode >= 200 ? chalk.green : chalk.white;
+                        chalk.green;
 
     console.log(
-      `\n${chalk.bgWhite.black(' LOG ')} ${methodColor(req.method)} ${chalk.bold(req.path)} ` +
-      `\nStatus: ${statusColor(res.statusCode)} ` +
-      `\nTime: ${chalk.gray(Logtime)} ` +
+      `\n${chalk.bgWhite.black(' LOG ')} ${methodColor(req.method)} ${chalk.bold(req.path)}` +
+      `\nStatus: ${statusColor(res.statusCode)}` +
+      `\nTime: ${chalk.gray(logTime)}` +
       `\nDuration: ${chalk.magenta(duration + 'ms')}\n`
     );
   });
@@ -79,64 +92,65 @@ app.use((req, res, next) => {
   next();
 });
 
+// Route to Emit a Socket Event
+app.post('/notify', (req, res) => {
+    const { message } = req.body;
 
+    if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+    }
+
+    if (!io) {
+        console.error("⚠️ Socket.IO instance is not initialized!");
+        return res.status(500).json({ error: "Socket.IO not initialized" });
+    }
+
+    try {
+        io.emit('notification', { message }); // Emit event to all connected clients
+        res.json({ success: true, message: "Notification sent successfully" });
+    } catch (err) {
+        console.error("Error emitting notification:", err);
+        res.status(500).json({ error: "Failed to send notification" });
+    }
+});
+
+// Metrics Route
+app.get('/metrics', async (req, res) => {
+    try {
+        res.set('Content-Type', register.contentType);
+        res.end(await register.metrics());
+    } catch (err) {
+        console.error("Error fetching metrics:", err);
+        res.status(500).json({ error: "Failed to retrieve metrics" });
+    }
+});
+
+// Use Routes
 app.use("/", uploadRouter);
 app.use('/user', userRoutes);
-app.post("/chat", async (req, res) => {
-  const { message } = req.body;
 
-  if (!message) {
-      return res.status(400).json({ error: "Message is required" });
-  }
-
-  try {
-      const response = await axios.post(
-          "https://api.openai.com/v1/chat/completions",
-          {
-              model: "gpt-3.5-turbo",
-              messages: [{ role: "user", content: message }],
-          },
-          {
-              headers: {
-                  "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-                  "Content-Type": "application/json",
-              },
-          }
-      );
-
-      res.json({ reply: response.data.choices[0].message.content });
-  } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: "Something went wrong" });
-  }
-});
-// Root route
+// Root Route
 app.get('/', (req, res) => {
-  res.send("Server is live.... ");
+  res.send("🚀 Server is live with Socket.IO and Prometheus Metrics!");
 });
 
-app.get('/metrics', async (req, res) => {
-  res.set('Content-Type', register.contentType);
-  res.end(await register.metrics());
-});
-
-// Global error handling middleware
+// Global Error Handling Middleware
 app.use((err, req, res, next) => {
-  console.error(err); // Log the error to the console
-  const statusCode = err.status || 500; // Use the error status if available, otherwise use 500
-  res.status(statusCode).json({
+  console.error("❌ Error:", err);
+  res.status(err.status || 500).json({
     error: {
       message: err.message || 'Internal Server Error',
-      status: statusCode
+      status: err.status || 500
     }
   });
 });
 
-app.use((req, res, next) => {
-  res.status(404).json({ title: '404', message: 'Page Not Found' });
+// 404 Not Found Handler
+app.use((req, res) => {
+  res.status(404).json({ error: '404 - Page Not Found' });
 });
 
-// Start the server
-app.listen(PORT ,() => {
-  console.log(`Click to Connect: http://localhost:${PORT}/`);
+// Start the Server
+server.listen(PORT, () => {
+    console.log(`✅ Server running at: ${chalk.cyan(`http://localhost:${PORT}/`)}`);
 });

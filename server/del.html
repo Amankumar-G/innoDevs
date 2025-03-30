@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Live Messages</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Socket.IO Live Messages</h1>
+    <div id="messages"></div>
+
+    <script>
+        const socket = io("http://localhost:5000");
+
+        socket.on("connect", () => {
+            console.log("Connected to WebSocket Server");
+        });
+
+        socket.on("message", (msg) => {
+            console.log("Received:", msg);
+            document.getElementById("messages").innerHTML += `<p>${msg}</p>`;
+        });
+
+        socket.on("disconnect", () => {
+            console.log("Disconnected from WebSocket Server");
+        });
+    </script>
+</body>
+</html>
