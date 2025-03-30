@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@langchain/community": "^0.3.37",
+    "@langchain/core": "^0.3.43",
+    "@langchain/langgraph": "^0.2.61",
+    "@langchain/openai": "^0.5.1",
+    "chromedriver": "^134.0.5",
+    "selenium-webdriver": "^4.30.0"
+  }
+}
