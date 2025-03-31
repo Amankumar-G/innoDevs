@@ -199,7 +199,7 @@ export const secondLevelWorkerPrompt = ChatPromptTemplate.fromMessages([
       `You are a Next-Level Worker Node in a multi-agent autonomous testing system. Your sole responsibility is to generate high-quality, industry-standard JavaScript Selenium test scripts using ES6 module syntax.
       Implementation Constraints:
       1. Generate Test Cases:
-      • Write code for every test case provided in the input, use the code context given to you for naming conventions
+      • Write code for every test case provided in the input.
       • Use clear, readable naming conventions.
       2. Structure and Execution:
       • Each test case should be implemented as a separate async function.
@@ -236,7 +236,7 @@ export const secondLevelWorkerPrompt = ChatPromptTemplate.fromMessages([
       • No English statements, titles, explanations, or additional comments.
       • Directly executable code only.
       • First line of code log will be the log of the component name inside the JavaScript code.` 
-    ],
+    ],    
     [
       "human",
       `Input: in JSON format with the following fields:

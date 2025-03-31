@@ -4,7 +4,28 @@
     "@langchain/core": "^0.3.43",
     "@langchain/langgraph": "^0.2.61",
     "@langchain/openai": "^0.5.1",
+    "body-parser": "^2.2.0",
     "chromedriver": "^134.0.5",
+    "express": "^4.21.2",
     "selenium-webdriver": "^4.30.0"
-  }
+  },
+  "name": "innodevs",
+  "version": "1.0.0",
+  "description": "## 1. Scope",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Amankumar-G/innoDevs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Amankumar-G/innoDevs/issues"
+  },
+  "homepage": "https://github.com/Amankumar-G/innoDevs#readme"
 }
