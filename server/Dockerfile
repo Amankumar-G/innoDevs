@@ -6,7 +6,7 @@ FROM node:18-alpine AS base
 WORKDIR /app
 
 # Copy package.json and package-lock.json for dependency installation
-COPY --link package.json package-lock.json ./
+COPY --link package*.json ./
 
 # Install dependencies using npm ci for a clean and deterministic install
 RUN --mount=type=cache,target=/root/.npm npm ci --production
