@@ -15,21 +15,24 @@ import TestCases from './components/TestCases.jsx'
 import TestAiRecomandation from './components/TestAiRecomandation.jsx'
 import Deployement from './components/Deployement.jsx'
 import { GenerateProvider } from './context/GenerateTest.jsx'
+import { ToggleProvider } from './context/ToggleContext.jsx'
+import { useToggle } from './context/ToggleContext.jsx'
 
 
 function AppRoutes() {
   const [dark, setDark] = useState(false);
   const {user,setUser} = useUser();
-
+   const {toggleDarkMode, setToggleDarkMode} = useToggle();
   useEffect(()=>{
     //  axios profile
     // setUser profile
     console.log(user);
     // setDark(true);
+    setUser({name:"xyz"});
   },[])
 
   return (
-    <div className="dark"> 
+    <div className={toggleDarkMode?"dark":""}> 
     {user? (
         <>
           <Header />
@@ -58,9 +61,11 @@ function App(){
     // provide context here
     <GenerateProvider>
     <UserProvider>
+      <ToggleProvider>
     <BrowserRouter>
           <AppRoutes></AppRoutes>
      </BrowserRouter>
+      </ToggleProvider>
     </UserProvider>
     </GenerateProvider>
   )
