@@ -16,6 +16,7 @@ import { displayStartupMessage } from './config/start.js';
 import passportConfig from './config/passport.js';
 import userRoutes from './Router/user.js';
 import uploadRouter from './Router/upload.js';
+import backRouter from "./Router/Back.js"
 import { initializeSocket, io } from './config/socket.js';
 
 // Display startup banner
@@ -126,7 +127,8 @@ app.get('/metrics', async (req, res) => {
 });
 
 // Use Routes
-app.use("/", uploadRouter);
+app.use("/frontend", uploadRouter);
+app.use("/backend", backRouter);
 app.use('/user', userRoutes);
 
 // Root Route

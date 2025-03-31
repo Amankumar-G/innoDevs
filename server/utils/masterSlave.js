@@ -1,7 +1,7 @@
 import { StateGraph, END } from "@langchain/langgraph";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
-import { masterNodePrompt ,firstLevelWorkerPrompt,secoundLevelWorkerPrompt} from "./promptTemplate.js";
+import { masterNodePrompt ,firstLevelWorkerPrompt,secondLevelWorkerPrompt} from "./promptTemplate.js";
 import {  io } from '../config/socket.js';
 // Initialize LLM instances with different roles
 const masterLLM = new ChatOpenAI({ modelName: "gpt-4o-mini", temperature: 0 });
@@ -27,7 +27,12 @@ async function masterAnalyzer(state) {
 
   const chain = prompt.pipe(masterLLM);
   const response = await chain.invoke(state);
-  const components = JSON.parse(response.content.replace(/^javascript\s*/, '').replace(/```$/, '')).components;
+  console.log(response.content)
+  const components = JSON.parse(response.content.replace(/^json\s*/, '').replace(/```$/, ''));
+
+  console.log(`-----------------------------------------------------`)
+  console.log(components);
+  console.log(`-----------------------------------------------------`)
 
   console.log("Identified components:", components.map(c => c.name));
   io.emit("message", `Identified components: ${components.map(c => c.name).join(', ')}`);
@@ -46,7 +51,8 @@ const componentAnalyzer = async (component) => {
   io.emit("message", `\nAnalyzing component: ${component.name}`);
   console.log("Component details:", {
     srsDetailsLength: component.srsDetails?.length,
-    codeFragmentLength: component.codeFragment?.length
+    codeFragmentLength: component.codeFragment?.length,
+    dependencies : component.dependencies
   });
   io.emit("message", `Component details: SRS details length: ${component.srsDetails?.length}, Code fragment length: ${component.codeFragment?.length}`);
 
@@ -57,7 +63,8 @@ const componentAnalyzer = async (component) => {
   const response = await chain.invoke({
     name: component.name,
     srsDetails: component.srsDetails,
-    codeFragment: component.codeFragment
+    codeFragment: component.codeFragment,
+    dependencies: component.dependencies
   });
   const result = JSON.parse(
     response.content
@@ -65,8 +72,12 @@ const componentAnalyzer = async (component) => {
       .replace(/```/g, '')
       .trim()
   );
+  console.log("----------------------------------------")
+  console.log("Validation result:", result);
+  console.log("----------------------------------------")
+  
   console.log(`Analysis result for ${component.name}:`, 
-    result.meetsRequirements ? "VALID" : "INVALID");
+  result.meetsRequirements ? "VALID" : "INVALID");
   io.emit("message", `Analysis result for ${component.name}: ${result.meetsRequirements ? "VALID" : "INVALID"}`);
   return result;
 };
@@ -76,19 +87,22 @@ const componentAnalyzer = async (component) => {
  * Input: { componentName: string, testCases: string[] }
  * Output: string (generated test script)
  */
-const seleniumGenerator = async (componentName, testCases) => {
+const seleniumGenerator = async (componentName, testCases,url,dependencies,codeFragment) => {
   console.log(`\nGenerating Selenium tests for: ${componentName}`);
   io.emit("message", `\nGenerating Selenium tests for: ${componentName}`);
   console.log("Test cases received:", testCases);
   io.emit("message", `Test cases received: ${JSON.stringify(testCases)}`);
 
   // Create and execute test generation prompt
-  const prompt = secoundLevelWorkerPrompt
+  const prompt = secondLevelWorkerPrompt
 
   const chain = prompt.pipe(seleniumLLM);
   const response = await chain.invoke({
     componentName: componentName,
-    testCases: testCases
+    testCases: testCases,
+    url,
+    dependencies,
+    codeContext : codeFragment
   });
 
   console.log(`Tests generated for ${componentName}`);
@@ -97,6 +111,7 @@ const seleniumGenerator = async (componentName, testCases) => {
 };
 
 async function runWorkflow(srsDocument, developedCode) {
+  const url = "http://localhost:3000"
   // Create state graph with initial values
   const workflow = new StateGraph({
     channels: {
@@ -161,7 +176,7 @@ async function runWorkflow(srsDocument, developedCode) {
     for (const result of validComponents) {
       console.log(`\nGenerating tests for: ${result.component}`);
       io.emit("message", `\nGenerating tests for: ${result.component}`);
-      const script = await seleniumGenerator(result.component, result.testCases);
+      const script = await seleniumGenerator(result.component, result.testCases,url,result.dependencies,result.codeFragment); 
       scripts.push({ component: result.component, script, testCases: result.testCases });
     }
 
