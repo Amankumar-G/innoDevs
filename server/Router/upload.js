@@ -26,6 +26,19 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 let scripts;
 
+
+router.get("/", (req, res) => {
+  scripts= [
+    // Example script content
+     "console.log('This is a test script.');",
+     "console.log('Another test script.');",
+    "console.log('Yet another test script.');",
+    
+  ]; // Reset the scripts array on each GET request
+  console.log(scripts)
+  res.send("Hello from the upload route!");
+});
+
 router.post("/process-workflow", upload.single("requirements"), async (req, res) => {
   try {
     let { pathUrl } = req.body;
