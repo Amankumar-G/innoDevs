@@ -13,6 +13,7 @@ function TestExecutionTerminal() {
   const [socket, setSocket] = useState(null);
   const [finalResponse, setFinalResponse] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [test,setTest] = useState([]);
 
   useEffect(() => {
     if (!pathUrl || !requirements) {
@@ -61,7 +62,9 @@ function TestExecutionTerminal() {
     return () => {
       newSocket.disconnect();
     };
-  }, [pathUrl, requirements]);
+
+
+  }, []);
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -72,41 +75,52 @@ function TestExecutionTerminal() {
     }, 100);
   };
 
-  const runSeleniumTests = () => {
+
+  const runSeleniumTests = async (e) => {
+    e.preventDefault();
     console.log("🚀 Running Selenium Tests...");
+  
     if (socket) socket.disconnect();
+  
     const newSocket = io("http://localhost:5000");
     setSocket(newSocket);
     setLogs([]); // Clear previous logs before new execution
     setLoading(true);
     setIsGenerating(true);
-
-    newSocket.on("connect", () => {
+  
+    newSocket.on("connect", async () => {
       console.log("🟢 WebSocket Connected for Selenium Test:", newSocket.id);
-      
-      axios
-        .get(`http://localhost:5000/${testType}/execute`)
-        .then((res) => {
-          console.log("✅ Selenium Test Triggered", res.data);
-        })
-        .catch((err) => console.error("❌ Selenium API Error:", err))
-        .finally(() => setIsGenerating(false));
+  
+      try {
+        const res = await axios.get(`http://localhost:5000/${testType}/execute`);
+        console.log("✅ Selenium Test Triggered", res.data);
+      } catch (err) {
+        console.error("❌ Selenium API Error:", err);
+      } finally {
+        setIsGenerating(false);
+      }
     });
-
+  
+    // ✅ Fix: Use Functional Updates to Avoid Stale State Issues
     newSocket.on("message", (data) => {
-      console.log("📥 Selenium Log Received:", data);
-      setLogs((prevLogs) => [...prevLogs, data]);
-      if (loading) setLoading(false);
+      console.log("📥 Log Received:", data);
+      
+      setTest((prevLogs) => [...prevLogs,data]);
+      // setLogs((prevLogs) => [...prevLogs, data]); // 🔥 Ensures the latest logs are used
+      setLoading(false);
       scrollToBottom();
     });
-
-    newSocket.on("disconnect", () => console.log("🔴 WebSocket Disconnected (Selenium)"));
-
+  
+    newSocket.on("disconnect", () => {
+      console.log("🔴 WebSocket Disconnected (Selenium)");
+    });
+  
+    // ✅ Cleanup function to remove event listeners
     return () => {
+      newSocket.off("message");
       newSocket.disconnect();
     };
   };
-
   
 
   return (
@@ -119,7 +133,7 @@ function TestExecutionTerminal() {
 </button>
 
       {isGenerating && loading ? (
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col  items-center">
           <Loader2 className="w-12 h-12 animate-spin text-green-500" />
           <h2 className="text-xl font-bold mt-4">Waiting for Logs...</h2>
         </div>
@@ -183,7 +197,9 @@ function TestExecutionTerminal() {
         <div
           id="terminal"
           className="w-full max-w-3xl overflow-hidden h-[34rem] bg-gray-200 dark:bg-gray-800 rounded-lg p-4 border border-gray-300 dark:border-gray-600 overflow-y-auto text-gray-900 dark:text-gray-100"
-        >
+        >{test.length > 0?
+          test.map((test,index)=><p key={index}>{test}</p>):"waiting for test..."
+        }
           {logs.length > 0
             ? logs.map((log, index) => <p key={index}>{log}</p>)
             : "Waiting for logs..."}
