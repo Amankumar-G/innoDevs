@@ -15,7 +15,7 @@ function Dashboard() {
   const [submit, setSubmit] = useState(false);
   const navigate = useNavigate();
   const { isGenerating, setIsGenerating } = useGenerate();
-  const [testType,setTestType] = useState("");
+  const [testType,setTestType] = useState("frontend");
   const [portUrl,setportUrl] = useState("");
 
   const handleSubmit = () => {
@@ -63,8 +63,8 @@ function Dashboard() {
         <div className="mt-6 space-y-6">
           {/* File Upload Input */}
           {/* Radio Button for Testing Type */}
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
+          {/* <div className="flex items-center gap-4"> */}
+            {/* <label className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
               <input
                 type="radio"
                 name="testType"
@@ -73,8 +73,8 @@ function Dashboard() {
                 onChange={(e) => setTestType(e.target.value)}
               />
               Frontend Testing
-            </label>
-            <label className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
+            </label> */}
+            {/* <label className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
               <input
                 type="radio"
                 name="testType"
@@ -83,8 +83,8 @@ function Dashboard() {
                 onChange={(e) => setTestType(e.target.value)}
               />
               Backend Testing
-            </label>
-          </div>
+            </label> */}
+          {/* </div> */}
 
           <div className="flex items-center gap-4 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition">
             <label
