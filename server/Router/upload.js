@@ -27,18 +27,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 let scripts;
 
 
-router.get("/", (req, res) => {
-  scripts= [
-    // Example script content
-     "console.log('This is a test script.');",
-     "console.log('Another test script.');",
-    "console.log('Yet another test script.');",
-    
-  ]; // Reset the scripts array on each GET request
-  console.log(scripts)
-  res.send("Hello from the upload route!");
-});
-
 router.post("/process-workflow", upload.single("requirements"), async (req, res) => {
   try {
     let { pathUrl } = req.body;
@@ -118,12 +106,66 @@ router.post("/process-workflow", upload.single("requirements"), async (req, res)
   }
 });
 
+// router.get("/execute", async (req, res) => {
+//   console.log("🔵 [Server] Execution request received.");
 
+//   let executionResults = {
+//     status: "Completed",
+//     scripts: [],
+//   };
+
+//   console.log(scripts);
+//   try {
+//     for (let i = 0; i < scripts.length; i++) {
+//       const scriptContent = scripts[i].replace(/^```javascript\n/, "").replace(/\n```$/, "");
+//       const scriptPath = path.join(__dirname, `script_${i + 1}.js`);
+
+//       // Write script content to a file
+//       await fs.writeFile(scriptPath, scriptContent);
+//       console.log(`✅ [Server] Script ${i + 1} saved: ${scriptPath}`);
+
+//       // Object to store script execution details
+//       let scriptResult = {
+//         scriptIndex: i + 1,
+//         scriptPath: scriptPath,
+//         stdout: "",
+//         stderr: "",
+//         status: "Success",
+//       };
+
+//       // Execute the script and store output
+//       try {
+//         const { stdout, stderr } = await execPromise(`node ${scriptPath}`);
+//         scriptResult.stdout = stdout;
+//         scriptResult.stderr = stderr || "";
+//       } catch (error) {
+//         scriptResult.status = "Failed";
+//         scriptResult.stderr = error.message;
+//         console.error(`❌ [Server] Error executing script ${i + 1}:`, error);
+//       }
+
+//       // Remove the script file after execution
+//       await fs.unlink(scriptPath);
+//       console.log(`🗑️ [Server] Script ${i + 1} deleted`);
+
+//       // Store the execution result
+//       executionResults.scripts.push(scriptResult);
+//     }
+
+//     res.json(executionResults);
+//   } catch (error) {
+//     console.error("❌ [Server] Error executing test scripts:", error);
+//     res.status(500).json({
+//       status: "Failed",
+//       error: "Failed to execute test scripts.",
+//     });
+//   }
+// });
 router.get("/execute", async (req, res) => {
   console.log("🔵 [Server] Execution request received.");
   io.emit("message", `[Server] Execution request received.`);
 
-  console.log(scripts);
+  // console.log(scripts);
   try {
     for (let i = 0; i < scripts.length; i++) {
       const scriptContent = scripts[i].replace(/^```javascript\n/, "").replace(/\n```$/, "");

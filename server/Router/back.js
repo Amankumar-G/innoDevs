@@ -6,11 +6,10 @@ import { generateEmbedding } from "../utils/embedding.js";
 import { generateTestCaseDocument, triggerExecution } from "../utils/testCaseGenerator.js";
 import Embedding from "../Schema/embedding.js";
 import { summarizeText } from "../utils/summaryGenerator.js"; 
-import { runWorkflow } from "../utils/masterSlave.js";
-import { readFilesRecursive } from "../utils/codeContext.js";
+import { runWorkflow } from "../utils/backMaster-Slave.js";
 import path from "path";
 import {  io } from '../config/socket.js';
-import fs from "fs/promises"; // Using promise-based fs
+import fs from "fs"; // Using promise-base 
 import { exec } from "child_process";
 import { promisify } from "util";
 
@@ -21,7 +20,33 @@ const execPromise = promisify(exec); // Convert exec to promise-based
 // Helper to get the directory of the current module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const TARGET_DIR = path.resolve("../rapido_testing/src");
+async function readFilesRecursive(dir) {
+  let allContent = "";
+
+  function readDirectory(currentPath) {
+    if (path.basename(currentPath) === "node_modules") return; // Skip node_modules
+
+    const files = fs.readdirSync(currentPath);
+
+    for (const file of files) {
+      const filePath = path.join(currentPath, file);
+      const stat = fs.statSync(filePath);
+
+      if (stat.isDirectory()) {
+        readDirectory(filePath); // Recursively read subdirectory
+      } else if (/\.(jsx|js|html|css)$/i.test(file)) {
+        // Only process .jsx, .js, .html, .css files
+        const content = fs.readFileSync(filePath, "utf-8");
+        allContent += `\n\n### ${filePath} ###\n${content}`;
+      }
+    }
+  }
+
+  readDirectory(dir);
+  return allContent;
+}
+
+const TARGET_DIR = path.resolve("../test-server");
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 let scripts = []; // Array to store the generated scripts

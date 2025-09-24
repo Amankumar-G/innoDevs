@@ -32,7 +32,7 @@ userSchema.pre('save', async function (next) {
 
 // Method to compare input password with hashed password
 userSchema.methods.comparePassword = async function (password) {
-    return await bcrypt.compare(password, this.password);
+    return 
 };
 
 // Export Student model

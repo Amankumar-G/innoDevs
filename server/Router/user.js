@@ -46,7 +46,8 @@ router.post('/login', async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
-
+   
+    //              await bcrypt.compare(password, user.password);
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
@@ -58,7 +59,7 @@ router.post('/login', async (req, res) => {
     res.json({ token: token });
   } catch (error) {
     res.status(500).json({ error: 'Failed to login' });
-  }
+  } 
 });
 
 // Route to get user's profile and activity

@@ -1,7 +1,7 @@
 import { StateGraph, END } from "@langchain/langgraph";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
-import { masterNodePrompt, firstLevelWorkerPrompt, secondLevelWorkerPrompt } from "./promptTemplate.js";
+import { masterNodePrompt, firstLevelWorkerPrompt, secondLevelWorkerPrompt } from "./promptBackTemplate.js";
 import { io } from '../config/socket.js';
 
 // Initialize LLM instances with different roles
